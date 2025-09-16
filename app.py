@@ -7,7 +7,7 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 
-DB_FAISS_PATH = "/content/drive/MyDrive/RAG_ChatBot/vectorstore/db_faiss"
+DB_FAISS_PATH = "vectorstore/db_faiss"
 
 # Cache FAISS vectorstore
 @st.cache_resource
