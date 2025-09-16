@@ -7,18 +7,24 @@ from langchain_community.vectorstores import FAISS
 from langchain_core.prompts import PromptTemplate
 from langchain_groq import ChatGroq
 
+# FAISS database path
 DB_FAISS_PATH = "vectorstore/db_faiss"
 
 # Cache FAISS vectorstore
 @st.cache_resource
 def get_vectorstore():
-    embedding_model = HuggingFaceEmbeddings(model_name='sentence-transformers/all-MiniLM-L6-v2')
+    embedding_model = HuggingFaceEmbeddings(
+        model_name='sentence-transformers/all-MiniLM-L6-v2'
+    )
     db = FAISS.load_local(DB_FAISS_PATH, embedding_model, allow_dangerous_deserialization=True)
     return db
 
 # Custom Prompt
 def set_custom_prompt(custom_prompt_template):
-    return PromptTemplate(template=custom_prompt_template, input_variables=["context", "question"])
+    return PromptTemplate(
+        template=custom_prompt_template, 
+        input_variables=["context", "query"]  # ✅ Must match invoke key
+    )
 
 def main():
     st.title("Ask Chatbot!")
@@ -43,7 +49,7 @@ def main():
         Only answer from the given context.
 
         Context: {context}
-        Question: {question}
+        Question: {query}
 
         Answer:
         """
@@ -52,21 +58,24 @@ def main():
             vectorstore = get_vectorstore()
             if vectorstore is None:
                 st.error("Failed to load the vector store")
+                return
 
+            # Build Retrieval QA Chain
             qa_chain = RetrievalQA.from_chain_type(
                 llm=ChatGroq(
-                    model_name="meta-llama/llama-3.1-70b-instruct",  # stable free model
+                    model_name="meta-llama/llama-3.1-70b-instruct",  # free Groq model
                     temperature=0.0,
                     groq_api_key=os.environ["GROQ_API_KEY"],
                 ),
                 chain_type="stuff",
                 retriever=vectorstore.as_retriever(search_kwargs={'k': 3}),
                 return_source_documents=True,
-                chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)}
+                chain_type_kwargs={'prompt': set_custom_prompt(CUSTOM_PROMPT_TEMPLATE)},
+                input_key="query"  # ✅ Important: matches PromptTemplate
             )
 
-            # Use "question", not "query"
-            response = qa_chain.invoke({'question': prompt})
+            # Invoke with "query" key
+            response = qa_chain.invoke({'query': prompt})
 
             result = response["result"]
 
