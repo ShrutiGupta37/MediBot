@@ -13,6 +13,7 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 ## Uncomment the following files if you're not using pipenv as your virtual environment manager
 from dotenv import load_dotenv
 load_dotenv()
+GROQ_API_KEY = st.secrets["GROQ_API_KEY"]
 
 
 DB_FAISS_PATH="vectorstore/db_faiss"
